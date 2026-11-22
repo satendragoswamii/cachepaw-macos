@@ -1,0 +1,64 @@
+#!/bin/bash
+# CachePaw: a cautious macOS cache cleaner built from Mole v1.41.0.
+set -euo pipefail
+
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+show_help() {
+    cat <<'EOF'
+CachePaw - cautious, scheduled cache cleanup for macOS
+
+Usage:
+  ./bin/cachepaw clean [--dry-run|--apply]  Preview or clear the conservative cache set
+  ./bin/cachepaw review                     Preview the full upstream Mole cleanup
+  ./bin/cachepaw schedule install [options] Install a per-user launchd schedule
+  ./bin/cachepaw schedule status            Show schedule status
+  ./bin/cachepaw schedule remove            Remove the schedule
+  ./bin/cachepaw mole <command>             Run an upstream Mole command explicitly
+  ./bin/cachepaw --version                  Show CachePaw version
+
+Schedule options:
+  --days N       Run cleanup no more often than every N days (default: 25)
+  --hour H       Local time hour for the daily launchd check (default: 10)
+  --minute M     Local time minute for the daily launchd check (default: 0)
+
+The default cleanup only targets Homebrew download archives and the pip cache.
+Use `review` to preview Mole's broader cleanup without deleting files.
+EOF
+}
+
+case "${1:-help}" in
+    clean)
+        shift
+        exec "$PROJECT_DIR/bin/cachepaw-safe-clean.sh" "$@"
+        ;;
+    review)
+        shift
+        exec "$PROJECT_DIR/mole" clean --dry-run "$@"
+        ;;
+    schedule)
+        shift
+        exec "$PROJECT_DIR/bin/cachepaw-schedule.sh" "$@"
+        ;;
+    mole)
+        shift
+        case "${1:-}" in
+            update | remove)
+                printf 'CachePaw disables upstream update/remove flows to protect this separate copy.\n' >&2
+                exit 2
+                ;;
+        esac
+        exec "$PROJECT_DIR/mole" "$@"
+        ;;
+    --version | version)
+        printf 'CachePaw 0.1.0 (Mole base V1.41.0)\n'
+        ;;
+    --help | -h | help)
+        show_help
+        ;;
+    *)
+        printf 'Unknown CachePaw command: %s\n\n' "$1" >&2
+        show_help >&2
+        exit 2
+        ;;
+esac

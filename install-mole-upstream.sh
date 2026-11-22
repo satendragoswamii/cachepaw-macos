@@ -1,5 +1,6 @@
 #!/bin/bash
-# Mole - Installer for manual installs.
+# Upstream Mole installer, preserved from Mole V1.41.0.
+# CachePaw itself runs from ./bin/cachepaw and does not use this installer.
 # Fetches source/binaries and installs to prefix.
 # Supports update and edge installs.
 
